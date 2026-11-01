@@ -1,0 +1,49 @@
+# ============================================================
+#  YouTube 下载器 —— Git 忽略规则
+#
+#  原则：仓库只放「自己写的代码 + 文档」。
+#  第三方二进制、下载产物、本机配置、临时文件一律不进版本库
+#  （单个 100MB 以上的文件 GitHub 会直接拒收，且历史一旦写脏无法简单清除）。
+#  需要用完整便携包时，跑 scripts/package-portable.ps1 生成 zip 传到 Release。
+# ============================================================
+
+# ---------- 第三方运行时与二进制 ----------
+# runtime/ 里是自带 node / CPython / pot-server（约 213MB）
+/runtime/
+# bin/ 里是 ffmpeg.exe（83MB）与 yt-dlp.exe，由安装脚本或 Release 包提供
+/bin/*
+!/bin/README.md
+
+# ---------- 依赖目录 ----------
+node_modules/
+
+# ---------- 下载产物 ----------
+/downloads/*
+!/downloads/.gitkeep
+
+# ---------- 本机配置（含绝对路径、代理地址，每台机器不同）----------
+/config.json
+
+# ---------- 排障与临时产物 ----------
+/_diag/
+/_tmp_fix/
+/_diagnose_result.txt
+/_diagnose_server.txt
+/_diagnose*.txt
+*.log
+
+# ---------- 打包输出 ----------
+/dist/
+
+# ---------- DSH 助手工作记忆（AI 会话记录，不属于本项目）----------
+/.dsh/
+
+# ---------- 编辑器 / 系统垃圾 ----------
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+*~
+*.tmp
+*.swp

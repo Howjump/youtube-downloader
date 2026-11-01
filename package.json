@@ -1,0 +1,26 @@
+{
+  "name": "youtube-downloader",
+  "version": "1.0.0",
+  "private": true,
+  "description": "本地 YouTube 视频下载器：零 npm 依赖的 Node 服务 + 单文件深色前端，支持 4K/8K、自动生成 PO Token、代理自适应",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "deps": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-deps.ps1",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-deps.ps1",
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "youtube-dl",
+    "yt-dlp",
+    "video-downloader",
+    "po-token",
+    "windows"
+  ],
+  "author": "Howjump",
+  "license": "MIT"
+}

@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube 下载器</title>
+<style>
+:root{
+  --bg:#0b0d12; --bg-glow:#141a26;
+  --panel:#141821; --panel2:#1a1f2b; --panel3:#20263652;
+  --border:#262d3c; --border2:#333c4f;
+  --text:#e9ecf2; --text2:#aab3c4; --dim:#78829a;
+  --accent:#ff3b5c; --accent-d:#d92445;
+  --blue:#4d8dff; --ok:#3ddc97; --warn:#fbbf24; --err:#ff6b6b;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 520px at 12% -8%, #1d2233 0%, transparent 55%),
+    radial-gradient(900px 460px at 92% 4%, #2a1620 0%, transparent 52%),
+    var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.6; min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 22px 90px}
+
+/* ---------- 顶栏 ---------- */
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.logo{display:flex;align-items:center;gap:11px}
+.logo-mark{
+  width:42px;height:42px;border-radius:12px;flex:0 0 auto;
+  background:linear-gradient(145deg,var(--accent),#ff7a52);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 22px -8px var(--accent);
+}
+h1{font-size:19px;margin:0;font-weight:650;letter-spacing:.2px}
+.sub{font-size:12px;color:var(--dim);margin-top:1px}
+.env{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel);border:1px solid var(--border);
+  padding:5px 11px;border-radius:999px;font-size:12px;color:var(--text2);
+  white-space:nowrap;
+}
+.badge b{color:var(--text);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+.dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.no{background:var(--err);box-shadow:0 0 8px var(--err)}
+.dot.warn{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+
+/* ---------- 卡片 ---------- */
+.card{
+  background:linear-gradient(180deg,var(--panel),#12161e);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;margin-bottom:18px;
+}
+.card-t{font-size:14px;font-weight:650;margin:0 0 3px;display:flex;align-items:center;gap:8px}
+.card-d{font-size:12px;color:var(--dim);margin:0 0 14px}
+
+/* ---------- 输入 ---------- */
+textarea#urls{
+  width:100%;min-height:96px;resize:vertical;
+  background:#0d1017;color:var(--text);
+  border:1px solid var(--border2);border-radius:11px;
+  padding:12px 14px;font-size:13.5px;line-height:1.7;
+  font-family:ui-monospace,Consolas,"Courier New",monospace;
+  outline:none;transition:border-color .18s,box-shadow .18s;
+}
+textarea#urls::placeholder{color:#5b6479}
+textarea#urls:focus{border-color:var(--accent);box-shadow:0 0 0 3px #ff3b5c1f}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.mt{margin-top:14px}
+.spacer{flex:1}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:9px 17px;border-radius:10px;font-size:13px;font-weight:600;
+  border:1px solid var(--border2);background:var(--panel2);color:var(--text);
+  cursor:pointer;transition:.16s;white-space:nowrap;font-family:inherit;
+}
+.btn:hover{background:#242b39;border-color:#3d4759}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-primary{
+  background:linear-gradient(145deg,var(--accent),#ff5c47);
+  border-color:transparent;color:#fff;
+  box-shadow:0 6px 18px -8px var(--accent);
+}
+.btn-primary:hover{filter:brightness(1.08);background:linear-gradient(145deg,var(--accent),#ff5c47)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.btn-ghost{background:transparent;border-color:var(--border)}
+.btn-ghost:hover{background:var(--panel2)}
+
+/* ---------- 设置 ---------- */
+.hidden{display:none !important}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+label.f{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:600}
+input[type=text],input[type=number],select{
+  width:100%;background:#0d1017;color:var(--text);
+  border:1px solid var(--border2);border-radius:9px;
+  padding:8px 11px;font-size:13px;outline:none;font-family:inherit;
+}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #4d8dff1f}
+.check{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13px;color:var(--text2);cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.hint{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.5}
+.sec-line{height:1px;background:var(--border);margin:16px 0}
+.preset{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+/* ---------- 版本与更新 ---------- */
+.upd-card{
+  border:1px solid var(--border2);border-radius:12px;
+  background:linear-gradient(180deg,#171d28,#12161e);
+  padding:14px 16px;transition:border-color .25s,box-shadow .25s;
+}
+.upd-card.flash{border-color:var(--accent);box-shadow:0 0 0 4px #ff3b5c26;animation:updflash .55s ease 2}
+@keyframes updflash{50%{box-shadow:0 0 0 8px #ff3b5c12}}
+.upd-top{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.upd-info{min-width:240px}
+.upd-label{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.6px}
+.upd-verrow{display:flex;align-items:center;gap:9px;margin-top:2px;flex-wrap:wrap}
+.upd-ver{font-size:21px;font-weight:700;letter-spacing:-.3px;font-family:ui-monospace,Consolas,monospace}
+.upd-meta{font-size:11.5px;color:var(--dim);margin-top:4px;line-height:1.55}
+.upd-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;padding-top:4px}
+.upd-state{
+  margin-top:12px;padding:9px 11px;border-radius:8px;font-size:12.5px;
+  background:#10151f;border:1px solid var(--border);color:var(--text2);
+  display:flex;align-items:center;gap:9px;line-height:1.55;
+}
+.upd-state.ok{background:#10241b;border-color:#1f4a38;color:#8ff0c0}
+.upd-state.warn{background:#2a2314;border-color:#5c4a1e;color:#ffd98a}
+.upd-state.err{background:#2a1418;border-color:#5a2830;color:#ff9c9c}
+.upd-log{
+  margin:11px 0 0;padding:10px 12px;border-radius:8px;
+  background:#0b0e14;border:1px solid var(--border);
+  color:#9aa5b8;font-size:11px;line-height:1.55;white-space:pre-wrap;
+  word-break:break-word;max-height:180px;overflow:auto;
+  font-family:ui-monospace,Consolas,monospace;
+}
+.tag.tag-stale{background:#4a3a12;color:#ffd98a;cursor:pointer}
+.tag.tag-update{background:#16324f;color:#8ec5ff;cursor:pointer}
+.tag.tag-fresh{background:#123225;color:#4ade80}
+.tag.tag-stale:hover,.tag.tag-update:hover{filter:brightness(1.18)}
+
+/* ---------- 视频卡 ---------- */
+.vcard{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.thumb{
+  width:220px;aspect-ratio:16/9;border-radius:11px;object-fit:cover;
+  background:#0d1017;border:1px solid var(--border);flex:0 0 auto;
+}
+.vmeta{flex:1;min-width:240px}
+.vtitle{font-size:16px;font-weight:650;line-height:1.45;margin:0 0 8px}
+.vsub{font-size:12.5px;color:var(--dim);display:flex;gap:14px;flex-wrap:wrap}
+
+/* ---------- 画质列表 ---------- */
+.qgroup{border:1px solid var(--border);border-radius:12px;margin-bottom:9px;overflow:hidden;background:var(--panel2)}
+.qhead{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .16s}
+.qhead:hover{background:#21283780}
+.qres{font-size:16px;font-weight:700;min-width:74px;letter-spacing:-.3px}
+.qres small{font-size:11px;font-weight:600;color:var(--dim);display:block;letter-spacing:0;margin-top:1px}
+.tag{
+  font-size:10.5px;font-weight:700;padding:2.5px 7px;border-radius:5px;
+  background:#2a3142;color:var(--text2);letter-spacing:.3px;white-space:nowrap;
+}
+.tag.hdr{background:#3a2a12;color:#f0b429}
+.tag.fps{background:#152b3d;color:#66b3ff}
+.tag.audio{background:#12301f;color:#4ade80}
+.tag.novid{background:#33202a;color:#f08fa8}
+.qsize{font-size:12.5px;color:var(--text2);margin-left:auto;text-align:right;white-space:nowrap}
+.qsize small{display:block;color:var(--dim);font-size:11px}
+.qarrow{color:var(--dim);transition:transform .2s;font-size:11px;flex:0 0 auto;width:14px;text-align:center}
+.qgroup.open .qarrow{transform:rotate(90deg)}
+.qbody{display:none;border-top:1px solid var(--border);background:#10141c}
+.qgroup.open .qbody{display:block}
+.frow{display:flex;align-items:center;gap:12px;padding:9px 14px;font-size:12.5px;border-bottom:1px solid #1a1f29}
+.frow:last-child{border-bottom:none}
+.frow:hover{background:#161c26}
+.fcodec{font-weight:650;min-width:82px;color:var(--text)}
+.fdim{color:var(--dim);min-width:110px}
+.fnum{margin-left:auto;color:var(--text2);white-space:nowrap;text-align:right}
+.frow .btn{margin-left:12px}
+
+/* ---------- 任务 ---------- */
+.task{
+  border:1px solid var(--border);border-radius:12px;padding:14px;
+  margin-bottom:11px;background:var(--panel2);transition:border-color .2s;
+}
+.task.running{border-color:#37507a}
+.task.done{border-color:#1f4a38}
+.task.error{border-color:#5a2830}
+.task-t{display:flex;gap:10px;align-items:flex-start}
+.task-name{font-size:13.5px;font-weight:600;flex:1;line-height:1.45;word-break:break-word}
+.task-badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;letter-spacing:.3px}
+.st-queued{background:#2a3142;color:#98a3b8}
+.st-running{background:#16324f;color:#6db3ff}
+.st-done{background:#123225;color:#4ade80}
+.st-error{background:#3a1d23;color:#ff8b8b}
+.st-canceled{background:#2a3142;color:#8d97ab}
+.bar{height:6px;border-radius:99px;background:#0c0f16;overflow:hidden;margin-top:11px;position:relative}
+.bar i{
+  display:block;height:100%;border-radius:99px;width:0;
+  background:linear-gradient(90deg,var(--accent),#ff8a5c);
+  transition:width .35s ease;position:relative;overflow:hidden;
+}
+.bar i::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,#ffffff40,transparent);
+  animation:shine 1.4s linear infinite;
+}
+@keyframes shine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.task.done .bar i{background:linear-gradient(90deg,#2ec27e,#4ade80)}
+.task.done .bar i::after{display:none}
+.task.error .bar i,.task.canceled .bar i{background:#39414f}
+.task.error .bar i::after,.task.canceled .bar i::after{display:none}
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-top:8px}
+.stats b{color:var(--text2);font-weight:600}
+.task-acts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.err-box{
+  background:#2a1418;border:1px solid #5a2830;color:#ff9c9c;
+  padding:9px 11px;border-radius:8px;font-size:11.5px;margin-top:10px;
+  white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:auto;
+  font-family:ui-monospace,Consolas,monospace;line-height:1.55;
+}
+/* 「被降级成低画质」的提示条：给原因 + 可操作按钮，而不是让用户以为视频本身就这样 */
+.warn-box{
+  background:#2a2314;border:1px solid #5c4a1e;
+  padding:10px 12px;border-radius:8px;margin-top:10px;
+  font-size:12px;line-height:1.65;color:#ffd98a;
+}
+.warn-box .warn-t{color:var(--warn);font-weight:600;margin-bottom:3px}
+.warn-box .warn-d{color:#d9c08a}
+.warn-box .hint{color:var(--dim);margin-top:5px}
+.empty{text-align:center;color:var(--dim);font-size:13px;padding:30px 0}
+
+/* ---------- 其他 ---------- */
+#toast{
+  position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);
+  background:#222a38;border:1px solid var(--border2);color:var(--text);
+  padding:11px 20px;border-radius:11px;font-size:13px;opacity:0;pointer-events:none;
+  transition:.25s;z-index:99;box-shadow:0 12px 34px -10px #000c;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spin{
+  width:14px;height:14px;border:2px solid #ffffff33;border-top-color:currentColor;
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+details.adv summary{
+  cursor:pointer;font-size:12.5px;color:var(--text2);font-weight:600;
+  padding:7px 0;list-style:none;display:flex;align-items:center;gap:7px;
+}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary::before{content:"▸";color:var(--dim);transition:transform .2s;display:inline-block}
+details.adv[open] summary::before{transform:rotate(90deg)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a3142;border-radius:9px}
+::-webkit-scrollbar-thumb:hover{background:#39435a}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <div class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3v13m0 0 5-5m-5 5-5-5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 19h16" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>YouTube 下载器</h1>
+        <div class="sub">全分辨率 · 音视频自动合并</div>
+      </div>
+    </div>
+    <div class="env">
+      <span class="badge" id="b-yt"><i class="dot"></i>yt-dlp</span>
+      <span class="badge" id="b-ff"><i class="dot"></i>ffmpeg</span>
+      <span class="badge" id="b-pot"><i class="dot"></i>防403</span>
+      <span class="badge" id="b-net"><i class="dot"></i>网络</span>
+      <button class="btn btn-sm btn-ghost" id="btn-settings">设置</button>
+    </div>
+  </header>
+
+  <!-- 输入 -->
+  <div class="card">
+    <div class="card-t">粘贴视频链接</div>
+    <div class="card-d">支持一次多个链接（每行一个）。解析后会列出该视频的<strong>全部可用分辨率</strong>，包括 4K / 2K / HDR / 60fps。</div>
+    <textarea id="urls" placeholder="https://www.youtube.com/watch?v=xxxxxxxxxxx&#10;https://youtu.be/yyyyyyyyyyy"></textarea>
+    <div class="row mt">
+      <button class="btn btn-primary" id="btn-probe">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+        解析链接
+      </button>
+      <button class="btn" id="btn-paste">从剪贴板粘贴</button>
+      <button class="btn btn-ghost" id="btn-clear-url">清空</button>
+      <div class="spacer"></div>
+      <span id="probe-status" style="font-size:12.5px;color:var(--dim)"></span>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="card hidden" id="settings">
+    <div class="card-t">设置</div>
+    <div class="card-d">配置会自动保存到程序目录的 config.json</div>
+
+    <!-- 版本与更新：常驻显示，不再藏进折叠项 -->
+    <div class="upd-card" id="update-panel">
+      <div class="upd-top">
+        <div class="upd-info">
+          <div class="upd-label">YT-DLP 版本</div>
+          <div class="upd-verrow">
+            <span class="upd-ver" id="upd-ver">—</span>
+            <span class="tag" id="upd-tag">未检查</span>
+          </div>
+          <div class="upd-meta" id="upd-meta">版本号即发布日期。YouTube 经常改版，保持最新可避免「要求登录」「格式不全」。</div>
+        </div>
+        <div class="upd-actions">
+          <button class="btn btn-sm" id="btn-check-update">检查更新</button>
+          <button class="btn btn-sm btn-primary" id="btn-update">立即更新</button>
+        </div>
+      </div>
+      <div class="upd-state hidden" id="upd-state"></div>
+      <pre class="upd-log hidden" id="upd-log"></pre>
+    </div>
+
+    <div class="sec-line"></div>
+
+    <div class="grid2">
+      <div>
+        <label class="f">下载保存目录</label>
+        <div class="row">
+          <input type="text" id="s-dir" style="flex:1">
+          <button class="btn btn-sm" id="btn-pick">浏览</button>
+          <button class="btn btn-sm btn-ghost" id="btn-open">打开</button>
+        </div>
+      </div>
+      <div>
+        <label class="f">代理服务器（国内访问 YouTube 必填）</label>
+        <div class="row">
+          <input type="text" id="s-proxy" placeholder="http://127.0.0.1:7890 或 socks5://127.0.0.1:1080" style="flex:1">
+          <button class="btn btn-sm" id="btn-probe-proxy">自动探测</button>
+        </div>
+        <div class="hint" id="proxy-hint">留空表示直连。Clash 常用 7890，v2rayN 常用 10808/10809。点「自动探测」可扫描本机正在监听的代理端口。</div>
+      </div>
+    </div>
+
+    <div class="sec-line"></div>
+
+    <div class="grid2">
+      <div>
+        <label class="f">画质偏好</label>
+        <select id="s-prefer">
+          <option value="h264">兼容优先（H.264，任何播放器都能放）</option>
+          <option value="best">画质优先（AV1 / VP9，体积更小）</option>
+        </select>
+        <label class="f" style="margin-top:14px">合并后封装格式</label>
+        <select id="s-container">
+          <option value="mp4">MP4（推荐）</option>
+          <option value="mkv">MKV（音轨字幕兼容性最好）</option>
+        </select>
+      </div>
+      <div>
+        <label class="f">同时下载数量</label>
+        <input type="number" id="s-conc" min="1" max="6" value="2">
+        <label class="f" style="margin-top:14px">限速（留空不限，如 5M）</label>
+        <input type="text" id="s-rate" placeholder="5M">
+        <label class="f" style="margin-top:14px">文件名模板</label>
+        <input type="text" id="s-name">
+        <div class="hint">%(title)s 标题 · %(id)s 视频ID · %(ext)s 扩展名 · %(uploader)s 作者</div>
+      </div>
+    </div>
+
+    <div class="sec-line"></div>
+
+    <details class="adv">
+      <summary>高级选项（字幕 / 封面 / 登录态）</summary>
+      <div class="grid2" style="margin-top:12px">
+        <div>
+          <label class="check"><input type="checkbox" id="s-meta"> 写入视频元数据（标题、作者、封面等）</label>
+          <label class="check"><input type="checkbox" id="s-wthumb"> 下载封面图片（默认开启，解析后每张卡片可单独改）</label>
+          <label class="check"><input type="checkbox" id="s-ethumb"> 把封面嵌入到文件里</label>
+        </div>
+        <div>
+          <label class="check"><input type="checkbox" id="s-sub"> 同时下载字幕（转 SRT）</label>
+          <label class="check"><input type="checkbox" id="s-playlist"> 允许下载整个播放列表</label>
+          <label class="f" style="margin-top:8px">字幕语言（逗号分隔）</label>
+          <input type="text" id="s-sublang" placeholder="zh-Hans,zh-CN,zh,en">
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div>
+          <label class="f">使用浏览器登录信息（会员 / 年龄限制视频）</label>
+          <select id="s-cookies">
+            <option value="">不使用</option>
+            <option value="chrome">Chrome</option>
+            <option value="edge">Edge</option>
+            <option value="firefox">Firefox</option>
+            <option value="brave">Brave</option>
+          </select>
+          <div class="hint">读取本机浏览器的 YouTube 登录态，可下载需登录才能看的内容。使用前请关闭该浏览器。</div>
+        </div>
+        <div>
+          <label class="f">YouTube 客户端组合（留空最稳，一般不用改）</label>
+          <input type="text" id="s-client" placeholder="留空 = 交给 yt-dlp 自选（推荐）">
+          <div class="hint">留空即可，别写死列表。「下载中途 403」的头号原因就是把客户端写死：YouTube 会逐个把客户端改坏，tv 现在直接不可用，web_safari / mweb 被强制 SABR 没有直链。只有你明确知道该用哪个客户端时才填，多个用英文逗号分隔。</div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div>
+          <label class="f">防 403 服务地址（PO Token）</label>
+          <input type="text" id="s-pot" placeholder="http://127.0.0.1:4416">
+          <div class="hint">由 runtime\pot-server 提供，双击启动脚本会自动拉起。留空则关闭该功能。</div>
+        </div>
+        <div>
+          <label class="f">网络体检</label>
+          <div class="preset">
+            <button class="btn btn-sm" id="btn-test">测试网络连通</button>
+          </div>
+          <div class="hint" id="maint-hint">检查当前代理能否正常访问 YouTube。</div>
+        </div>
+      </div>
+    </details>
+
+    <div class="row mt">
+      <button class="btn btn-primary" id="btn-save">保存设置</button>
+      <button class="btn btn-ghost" id="btn-close-settings">收起</button>
+    </div>
+  </div>
+
+  <!-- 解析结果 -->
+  <div id="results"></div>
+
+  <!-- 任务 -->
+  <div class="card" id="task-card">
+    <div class="row" style="margin-bottom:14px">
+      <div>
+        <div class="card-t" style="margin:0">下载任务</div>
+        <div class="card-d" style="margin:2px 0 0" id="task-sum">暂无任务</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-sm btn-ghost" id="btn-open-dir">打开下载目录</button>
+      <button class="btn btn-sm btn-ghost" id="btn-clear-done">清除已结束</button>
+    </div>
+    <div id="tasks"></div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================ 基础工具 ============================ */
+const $ = s => document.querySelector(s);
+const el = (tag, cls, html) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html !== undefined) e.innerHTML = html;
+  return e;
+};
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+function toast(msg, ms) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms || 2600);
+}
+
+/**
+ * 打开下载目录 / 定位文件。
+ * 资源管理器打开是「火并忘」操作，浏览器拿不到是否真的弹窗了，
+ * 所以这里做两件事：调用后端触发打开 + 把路径复制到剪贴板兜底，
+ * 并给用户明确反馈，避免「点了没反应」的困惑。
+ */
+async function openFolder(payload, hint) {
+  let pathShown = '';
+  try {
+    const r = await api('/api/reveal', { method: 'POST', body: JSON.stringify(payload || {}) });
+    pathShown = (r && r.dir) || '';
+  } catch (e) {
+    toast('打开失败：' + e.message, 4000);
+    return;
+  }
+  // 顺便复制路径，万一资源管理器没弹出来，用户可直接粘贴
+  if (pathShown) {
+    try { await navigator.clipboard.writeText(pathShown); } catch (e) {}
+  }
+  toast(hint || (pathShown ? '已尝试打开：' + pathShown + '（路径已复制）' : '已尝试打开文件夹'), 3200);
+}
+
+function fmtBytes(n) {
+  if (!n || n <= 0) return '—';
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0, v = n;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)) + ' ' + u[i];
+}
+function fmtSpeed(n) { return n ? fmtBytes(n) + '/s' : '—'; }
+function fmtEta(s) {
+  if (s == null || !isFinite(s) || s < 0) return '—';
+  s = Math.round(s);
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = s%60;
+  const p = n => String(n).padStart(2,'0');
+  return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`;
+}
+function fmtDuration(s) {
+  if (!s) return '';
+  s = Math.round(s);
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = s%60;
+  const p = n => String(n).padStart(2,'0');
+  return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`;
+}
+async function api(path, opts) {
+  const r = await fetch(path, Object.assign({ headers: {'Content-Type':'application/json'} }, opts));
+  return r.json();
+}
+
+/* ============================ 状态 ============================ */
+let CFG = {};
+let ENV = {};
+let RESULTS = [];   // 解析结果
+let UPDATE_INFO = null;   // /api/check-update 的结果
+let UPDATING = false;
+const TASKS = new Map();
+let TASK_ORDER = [];
+
+/* ============================ 启动 ============================ */
+(async function init() {
+  await Promise.all([loadEnv(), loadConfig()]);
+  bindUI();
+  connectSSE();
+  const ts = await api('/api/tasks');
+  (ts.tasks || []).forEach(t => { TASKS.set(t.id, t); TASK_ORDER.push(t.id); });
+  renderTasks();
+  renderUpdatePanel();
+  // 后台静默检查一次，让「N 天未更新」能变成「可更新到 x.y.z」
+  setTimeout(() => checkUpdate(true), 600);
+})();
+
+async function loadEnv(force) {
+  ENV = await api('/api/env' + (force ? '?force=1' : ''));
+  renderYtBadge();
+  const ff = $('#b-ff'), net = $('#b-net');
+  ff.innerHTML = `<i class="dot ${ENV.ffmpeg.ok?'ok':'no'}"></i>ffmpeg <b>${ENV.ffmpeg.ok?esc(ENV.ffmpeg.version):'缺失'}</b>`;
+  net.innerHTML = ENV.proxy
+    ? `<i class="dot warn"></i>代理 <b>${esc(ENV.proxy.replace(/^[a-z0-9]+:\/\//i,''))}</b>`
+    : `<i class="dot no"></i>直连 <b>未设代理</b>`;
+  const pot = $('#b-pot');
+  if (pot && ENV.pot) {
+    pot.innerHTML = `<i class="dot ${ENV.pot.ok?'ok':'warn'}"></i>防403 <b>${ENV.pot.ok?'已开启':'未启动'}</b>`;
+    pot.title = ENV.pot.hint || '';
+  }
+  if (!ENV.ytdlp.ok || !ENV.ffmpeg.ok) {
+    toast('缺少 ' + (!ENV.ytdlp.ok ? 'yt-dlp' : 'ffmpeg') + '，请检查 bin 目录', 6000);
+  }
+  if (ENV.pot && !ENV.pot.ok && ENV.ytdlp.ok) {
+    toast('防 403 服务未启动，YouTube 下载可能失败。重开一次「启动下载器.bat」即可。', 7000);
+  }
+}
+
+/* ============================ 版本与更新 ============================ */
+
+let UPDATE_SUCCESS_MSG = '';
+let UPDATE_FAIL_MSG = '';
+let CHECKING = false;
+
+/** 顶部 yt-dlp 徽标：把版本新鲜度做成可点击的入口 */
+function renderYtBadge() {
+  const yt = $('#b-yt');
+  if (!yt || !ENV.ytdlp) return;
+  const v = ENV.ytdlp;
+  let chip = '';
+  if (UPDATE_INFO && UPDATE_INFO.ok && UPDATE_INFO.hasUpdate) {
+    chip = ` <span class="tag tag-update" id="yt-stale" title="点击到设置里更新">可更新 ${esc(UPDATE_INFO.latest)}</span>`;
+  } else if (UPDATE_INFO && UPDATE_INFO.ok && !UPDATE_INFO.hasUpdate) {
+    chip = ` <span class="tag tag-fresh" title="已是最新稳定版">已是最新</span>`;
+  } else if (v.ageDays != null && v.ageDays > 45) {
+    chip = ` <span class="tag tag-stale" id="yt-stale" title="点此检查并更新">${v.ageDays} 天未更新</span>`;
+  }
+  yt.innerHTML = `<i class="dot ${v.ok?'ok':'no'}"></i>yt-dlp <b>${v.ok?esc(v.version):'缺失'}</b>`
+    + (v.jsRuntime ? ` <span style="color:var(--ok)">+${esc(v.jsRuntime)}</span>` : '')
+    + chip;
+  const stale = $('#yt-stale');
+  if (stale) stale.onclick = () => focusUpdatePanel(true);
+}
+
+function focusUpdatePanel(autoCheck) {
+  $('#settings').classList.remove('hidden');
+  const panel = $('#update-panel');
+  if (!panel) return;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  panel.classList.remove('flash');
+  void panel.offsetWidth;
+  panel.classList.add('flash');
+  setTimeout(() => panel.classList.remove('flash'), 1900);
+  if (autoCheck && !UPDATING && (!UPDATE_INFO || !UPDATE_INFO.ok)) checkUpdate(true);
+}
+
+/** 把当前版本 / 最新版本 / 操作结果统一画到设置页的更新面板 */
+function renderUpdatePanel() {
+  const ver = $('#upd-ver');
+  if (!ver) return;
+  const v = (ENV && ENV.ytdlp) || {};
+  const info = UPDATE_INFO;
+  // 以检查接口返回的版本为准：ENV 有缓存，刚升级/降级后可能还没刷新
+  const curVer = (info && info.current) || v.version || '';
+  const age = (info && info.ageDays != null) ? info.ageDays : v.ageDays;
+  const tag = $('#upd-tag');
+  const meta = $('#upd-meta');
+  const state = $('#upd-state');
+  const btn = $('#btn-update');
+
+  ver.textContent = curVer || '—';
+
+  let tagText = '未检查', tagCls = '';
+  if (UPDATING) { tagText = '更新中'; tagCls = 'tag-update'; }
+  else if (CHECKING) { tagText = '检查中'; tagCls = 'tag-update'; }
+  else if (info) {
+    if (!info.ok) { tagText = '检查失败'; }
+    else if (info.hasUpdate) { tagText = '有新版本 ' + info.latest; tagCls = 'tag-update'; }
+    else { tagText = '已是最新'; tagCls = 'tag-fresh'; }
+  } else if (age != null && age > 45) { tagText = age + ' 天未更新'; tagCls = 'tag-stale'; }
+  tag.textContent = tagText;
+  tag.className = 'tag' + (tagCls ? ' ' + tagCls : '');
+
+  const parts = [];
+  if (curVer) parts.push(`当前 ${curVer}` + (age != null ? `（发布于 ${age} 天前）` : ''));
+  if (info && info.ok && info.latest) {
+    parts.push(info.hasUpdate
+      ? `最新 ${info.latest}（${info.latestAgeDays} 天前发布）`
+      : `最新稳定版 ${info.latest}`);
+    if (info.sourceName) parts.push('来源：' + info.sourceName);
+  }
+  meta.textContent = parts.join(' · ')
+    || '版本号即发布日期。YouTube 经常改版，保持最新可避免「要求登录」「格式不全」。';
+
+  btn.disabled = UPDATING;
+  btn.textContent = UPDATING ? '更新中…'
+    : (info && info.ok && info.hasUpdate ? '更新到 ' + info.latest : '立即更新');
+
+  if (UPDATING) {
+    state.className = 'upd-state warn';
+    state.classList.remove('hidden');
+    state.innerHTML = '<span class="spin"></span> 正在下载并安装 yt-dlp，通常 10–60 秒，请勿关闭页面…';
+    return;
+  }
+  if (UPDATE_SUCCESS_MSG) {
+    state.className = 'upd-state ok';
+    state.classList.remove('hidden');
+    state.innerHTML = esc(UPDATE_SUCCESS_MSG);
+    return;
+  }
+  if (UPDATE_FAIL_MSG) {
+    state.className = 'upd-state err';
+    state.classList.remove('hidden');
+    state.innerHTML = '✕ ' + esc(UPDATE_FAIL_MSG);
+    return;
+  }
+  if (CHECKING && !info) {
+    state.className = 'upd-state';
+    state.classList.remove('hidden');
+    state.innerHTML = '<span class="spin"></span> 正在查询最新稳定版…';
+    return;
+  }
+  if (!info) { state.classList.add('hidden'); return; }
+
+  state.classList.remove('hidden');
+  if (!info.ok) {
+    state.className = 'upd-state err';
+    state.innerHTML = '✕ 无法检查更新：' + esc(info.error || '网络不通')
+      + '<br><span style="color:var(--dim)">可直接点「立即更新」再试一次；国内网络需要先在设置里填好代理。</span>';
+  } else if (info.hasUpdate) {
+    state.className = 'upd-state warn';
+    state.innerHTML = `发现新版本 <b>${esc(info.latest)}</b>，当前 <b>${esc(info.current || v.version || '')}</b>。`
+      + 'YouTube 改版后旧版容易被要求登录或丢失格式，建议更新。'
+      + (info.warning ? `<br><span style="color:var(--dim)">${esc(info.warning)}</span>` : '');
+  } else {
+    state.className = 'upd-state ok';
+    state.innerHTML = `✓ 已是最新稳定版 <b>${esc(info.latest || curVer || '')}</b>，无需更新。`;
+  }
+}
+
+async function checkUpdate(silent, force) {
+  if (UPDATING) return;
+  const btn = $('#btn-check-update');
+  const state = $('#upd-state');
+  if (!silent) { UPDATE_SUCCESS_MSG = ''; UPDATE_FAIL_MSG = ''; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 检查中'; }
+  if (state && !silent) {
+    state.className = 'upd-state';
+    state.classList.remove('hidden');
+    state.innerHTML = '<span class="spin"></span> 正在查询最新稳定版…';
+  }
+  CHECKING = true;
+  renderUpdatePanel();
+  try {
+    // 后端有 2 分钟缓存与并发合并；这里再加一层兜底，别让界面永远“检查中”
+    const r = await Promise.race([
+      api('/api/check-update' + (force ? '?force=1' : '')),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('检查超时：代理或更新服务器没有响应，请稍后重试')), 25000))
+    ]);
+    UPDATE_INFO = r;
+    renderUpdatePanel();
+    renderYtBadge();
+    if (!silent) {
+      if (r.ok) toast(r.hasUpdate ? `发现新版本 ${r.latest}` : '当前已是最新稳定版', 4500);
+      else toast('检查更新失败：' + (r.error || '网络不通'), 6500);
+    }
+  } catch (e) {
+    UPDATE_INFO = { ok: false, error: String(e && e.message || e), current: (ENV.ytdlp && ENV.ytdlp.version) || '' };
+    renderUpdatePanel();
+    renderYtBadge();
+    if (!silent) toast('检查更新失败：' + (e && e.message || e), 6500);
+  } finally {
+    CHECKING = false;
+    if (btn) { btn.disabled = false; btn.textContent = '检查更新'; }
+    renderUpdatePanel();
+  }
+}
+
+async function updateYtdlp() {
+  if (UPDATING) return;
+  UPDATING = true;
+  UPDATE_SUCCESS_MSG = '';
+  UPDATE_FAIL_MSG = '';
+  const btn = $('#btn-update'), chk = $('#btn-check-update');
+  const state = $('#upd-state'), log = $('#upd-log');
+  chk.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> 更新中…';
+  log.classList.add('hidden');
+  log.textContent = '';
+  renderUpdatePanel();
+  let recheck = false;
+  try {
+    const target = (UPDATE_INFO && UPDATE_INFO.ok && UPDATE_INFO.hasUpdate) ? UPDATE_INFO.latest : '';
+    const r = await api('/api/update-ytdlp', { method: 'POST', body: JSON.stringify({ target }) });
+    if (r.output) { log.textContent = r.output; log.classList.remove('hidden'); }
+    if (r.ok) {
+      recheck = true;
+      const changed = !!r.updated && r.version !== r.previous;
+      UPDATE_SUCCESS_MSG = changed
+        ? `✓ 更新完成：${r.previous || '旧版本'} → ${r.version}（下次解析 / 下载会自动使用新版本）`
+        : `✓ 当前已是最新版本 ${r.version}，无需重复安装`;
+      toast(changed ? `yt-dlp 已更新到 ${r.version}` : '当前已是最新版本', 6000);
+      await loadEnv(true);
+    } else {
+      UPDATE_FAIL_MSG = '更新失败：' + (r.error || '下载或安装没有完成')
+        + '　请检查代理能否访问 pypi.org，或稍后重试。';
+      toast('更新失败，详情见面板下方日志', 6500);
+    }
+  } catch (e) {
+    UPDATE_FAIL_MSG = '更新失败：' + (e && e.message || e);
+    toast('更新失败：' + (e && e.message || e), 6500);
+  } finally {
+    UPDATING = false;
+    btn.disabled = false;
+    chk.disabled = false;
+    renderUpdatePanel();
+  }
+  if (recheck) {
+    // 静默复核最新版；成功后保留「更新完成」这条信息
+    await checkUpdate(true, true);
+    renderUpdatePanel();
+  }
+}
+
+async function loadConfig() {
+  CFG = await api('/api/config');
+  $('#s-dir').value = CFG.downloadDir || '';
+  $('#s-proxy').value = CFG.proxy || '';
+  $('#s-prefer').value = CFG.preferHighQuality ? 'best' : 'h264';
+  $('#s-container').value = CFG.mergeContainer || 'mp4';
+  $('#s-conc').value = CFG.concurrency || 2;
+  $('#s-rate').value = CFG.rateLimit || '';
+  $('#s-name').value = CFG.filenameTemplate || '';
+  $('#s-meta').checked = !!CFG.embedMetadata;
+  $('#s-wthumb').checked = !!CFG.writeThumbnail;
+  $('#s-ethumb').checked = !!CFG.embedThumbnail;
+  $('#s-sub').checked = !!CFG.writeSubtitles;
+  $('#s-playlist').checked = !!CFG.allowPlaylist;
+  $('#s-sublang').value = CFG.subtitleLangs || '';
+  $('#s-cookies').value = CFG.cookiesFromBrowser || '';
+  if ($('#s-client')) $('#s-client').value = CFG.playerClient || '';
+  if ($('#s-pot')) $('#s-pot').value = CFG.potProviderUrl || '';
+}
+
+/* ============================ 绑定 ============================ */
+function bindUI() {
+  $('#btn-settings').onclick = () => {
+    const s = $('#settings');
+    const opening = s.classList.contains('hidden');
+    s.classList.toggle('hidden');
+    if (opening) {
+      renderUpdatePanel();
+      // 第一次打开设置时顺手查一次，用户不必再点「检查更新」
+      if (!UPDATE_INFO && !UPDATING) checkUpdate(true);
+    }
+  };
+  $('#btn-close-settings').onclick = () => $('#settings').classList.add('hidden');
+
+  $('#btn-paste').onclick = async () => {
+    try {
+      const txt = await navigator.clipboard.readText();
+      const cur = $('#urls').value.trim();
+      $('#urls').value = (cur ? cur + '\n' : '') + txt.trim();
+    } catch (e) { toast('无法读取剪贴板，请手动粘贴（Ctrl+V）'); }
+  };
+  $('#btn-clear-url').onclick = () => { $('#urls').value = ''; $('#urls').focus(); };
+  $('#btn-probe').onclick = doProbe;
+
+  $('#btn-save').onclick = saveSettings;
+  $('#btn-pick').onclick = pickDir;
+  $('#btn-open').onclick = () => openFolder({dir:$('#s-dir').value});
+  $('#btn-open-dir').onclick = () => openFolder({dir:CFG.downloadDir});
+  $('#btn-clear-done').onclick = async () => { await api('/api/clear-finished', {method:'POST', body:'{}'}); };
+  $('#btn-probe-proxy').onclick = probeProxy;
+  $('#btn-test').onclick = testNetwork;
+  $('#btn-check-update').onclick = () => checkUpdate(false, true);
+  $('#btn-update').onclick = updateYtdlp;
+
+  $('#urls').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') doProbe();
+  });
+}
+
+function collectSettings() {
+  return {
+    downloadDir: $('#s-dir').value.trim(),
+    proxy: $('#s-proxy').value.trim(),
+    preferHighQuality: $('#s-prefer').value === 'best',
+    mergeContainer: $('#s-container').value,
+    concurrency: Number($('#s-conc').value) || 2,
+    rateLimit: $('#s-rate').value.trim(),
+    filenameTemplate: $('#s-name').value.trim(),
+    embedMetadata: $('#s-meta').checked,
+    writeThumbnail: $('#s-wthumb').checked,
+    embedThumbnail: $('#s-ethumb').checked,
+    writeSubtitles: $('#s-sub').checked,
+    allowPlaylist: $('#s-playlist').checked,
+    subtitleLangs: $('#s-sublang').value.trim(),
+    cookiesFromBrowser: $('#s-cookies').value,
+    playerClient: $('#s-client') ? $('#s-client').value.trim() : '',
+    potProviderUrl: $('#s-pot') ? $('#s-pot').value.trim() : ''
+  };
+}
+
+async function saveSettings() {
+  const body = collectSettings();
+  if (!body.filenameTemplate) delete body.filenameTemplate;
+  const r = await api('/api/config', {method:'POST', body: JSON.stringify(body)});
+  if (r.ok) {
+    CFG = r.config;
+    toast('设置已保存');
+    loadEnv(true);
+  } else toast('保存失败');
+}
+
+async function pickDir() {
+  const r = await api('/api/pick-dir', {method:'POST', body:'{}'});
+  if (r.ok) { $('#s-dir').value = r.dir; CFG.downloadDir = r.dir; toast('下载目录已切换'); }
+  else toast('未能选择目录，可直接手动填写路径');
+}
+
+async function probeProxy() {
+  const btn = $('#btn-probe-proxy');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 扫描中';
+  try {
+    const r = await api('/api/probe-proxy');
+    if (!r.candidates.length) {
+      $('#proxy-hint').innerHTML = '未发现本机代理端口。请先启动代理软件（Clash / v2rayN 等），再点「自动探测」。';
+      toast('未探测到代理端口');
+    } else {
+      const c = r.candidates[0];
+      $('#s-proxy').value = c.http;
+      $('#proxy-hint').innerHTML = '发现可用端口：' + r.candidates.map(x => x.port).join('、') +
+        '，已填入 <b>' + esc(c.http) + '</b>。若下载仍失败，试试改成 <b>' + esc(c.socks5) + '</b>。';
+      toast('发现 ' + r.candidates.length + ' 个端口，已填入第一个');
+    }
+  } finally { btn.disabled = false; btn.textContent = '自动探测'; }
+}
+
+async function testNetwork() {
+  const btn = $('#btn-test');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 测试中';
+  try {
+    const r = await api('/api/test-network', {method:'POST', body: JSON.stringify({proxy: $('#s-proxy').value.trim()})});
+    if (r.ok) { toast('✓ ' + r.message + '（示例视频：' + (r.sample||'') + '）', 5000); }
+    else { toast('✗ ' + r.message, 7000); }
+    $('#maint-hint').innerHTML = r.ok
+      ? '<span style="color:var(--ok)">✓ 网络可访问 YouTube</span>'
+      : '<span style="color:var(--err)">✗ ' + esc(r.message) + '</span>';
+  } finally { btn.disabled = false; btn.textContent = '测试网络连通'; }
+}
+
+/* ============================ 解析 ============================ */
+function extractUrls(text) {
+  const out = [];
+  const re = /https?:\/\/[^\s"'<>]+/g;
+  let m;
+  while ((m = re.exec(text))) out.push(m[0].replace(/[，。、）)]+$/, ''));
+  return [...new Set(out)];
+}
+
+async function doProbe() {
+  const urls = extractUrls($('#urls').value);
+  if (!urls.length) { toast('请先粘贴视频链接'); return; }
+  const btn = $('#btn-probe');
+  btn.disabled = true;
+  $('#results').innerHTML = '';
+  $('#probe-status').innerHTML = '';
+
+  for (let i = 0; i < urls.length; i++) {
+    const u = urls[i];
+    $('#probe-status').innerHTML = `<span class="spin"></span> 正在解析 ${i+1}/${urls.length}…`;
+    const holder = el('div');
+    holder.innerHTML = `<div class="card"><div class="row"><span class="spin" style="color:var(--accent)"></span>
+      <span style="color:var(--text2);font-size:13px">正在解析 ${esc(u)} …</span></div>
+      <div class="js-parse-note" style="font-size:12px;color:var(--dim);margin-top:8px"></div></div>`;
+    $('#results').appendChild(holder);
+
+    /*
+     * 解析中给个"已用时长 + 阶段提示"。
+     * 服务端在拿到完整格式列表前可能要换几种策略重试，
+     * 以前界面只有一个不动的转圈，用户完全判断不出是在干活还是卡死了。
+     */
+    const noteBox = holder.querySelector('.js-parse-note');
+    const t0 = Date.now();
+    const timer = setInterval(() => {
+      const s = Math.round((Date.now() - t0) / 1000);
+      $('#probe-status').innerHTML = `<span class="spin"></span> 正在解析 ${i+1}/${urls.length}… 已用 ${s}s`;
+      if (s >= 25) {
+        noteBox.textContent = '仍在重试：多半是网络/代理不通。请检查代理软件是否在运行，'
+          + '或到「设置 → 代理地址」点「自动探测」。';
+      } else if (s >= 8) {
+        noteBox.textContent = '解析中：为拿到完整画质可能要多试几种策略，请稍候…';
+      }
+    }, 1000);
+
+    let r;
+    try { r = await api('/api/probe', {method:'POST', body: JSON.stringify({url: u})}); }
+    catch (e) { r = {error: '请求失败：' + e.message}; }
+    finally { clearInterval(timer); }
+
+    holder.innerHTML = '';
+    if (r.error) {
+      const c = el('div','card');
+      c.innerHTML = `<div class="card-t" style="color:var(--err)">解析失败</div>
+        <div class="card-d" style="word-break:break-all">${esc(u)}</div>
+        ${r.hint ? `<div class="warn-box" style="margin-top:10px">
+            <div class="warn-t">⚠ 可能的原因与解决办法</div>
+            <div class="warn-d" style="white-space:pre-wrap">${esc(r.hint)}</div>
+          </div>` : ''}
+        <details class="adv" style="margin-top:8px">
+          <summary>原始报错（排查用）</summary>
+          <div class="err-box" style="margin-top:8px">${esc(r.error)}</div>
+        </details>
+        <div class="hint" style="margin-top:10px">
+          常见原因：① <b>网络访问不了 YouTube</b>（国内必须走代理）——
+          先启动代理软件，再到「设置 → 代理地址」点「自动探测」选一个填入；
+          ② 链接是私享/会员内容（可在设置里启用浏览器登录信息）；
+          ③ yt-dlp 版本过旧（点「更新 yt-dlp」）。
+        </div>`;
+      holder.appendChild(c);
+    } else {
+      RESULTS.push({ url: u, data: r });
+      holder.appendChild(renderResult(u, r));
+    }
+  }
+  $('#probe-status').innerHTML = '';
+  btn.disabled = false;
+}
+
+function renderResult(url, r) {
+  const card = el('div','card');
+
+  const total = r.groups.reduce((a,g) => a + g.formats.length, 0) + r.audioOnly.length;
+  const hi = r.groups.length ? r.groups[0].height : 0;
+
+  card.innerHTML = `
+    <div class="vcard">
+      ${r.thumbnail ? `<img class="thumb" src="${esc(r.thumbnail)}" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+      <div class="vmeta">
+        <div class="vtitle">${esc(r.title)}</div>
+        <div class="vsub">
+          ${r.uploader ? `<span>👤 ${esc(r.uploader)}</span>` : ''}
+          ${r.duration ? `<span>⏱ ${fmtDuration(r.duration)}</span>` : ''}
+          ${r.viewCount ? `<span>👁 ${Number(r.viewCount).toLocaleString()}</span>` : ''}
+          ${r.isLive ? `<span style="color:var(--warn)">● 直播</span>` : ''}
+        </div>
+        <div class="vsub" style="margin-top:6px">
+          <span style="color:${r.degraded ? 'var(--warn)' : 'var(--ok)'}">${r.degraded ? '⚠' : '✓'} 已识别 <b>${total}</b> 个格式 / <b>${r.groups.length}</b> 档分辨率</span>
+          ${hi ? `<span>最高 <b>${hi}p</b></span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${r.degraded ? `
+      <div class="warn-box">
+        <div class="warn-t">⚠ 只拿到最低画质（${hi}p 单条合并流），已自动换 ${r.attempts || 1} 种策略重试仍未改善</div>
+        <div class="warn-d">${esc(r.degradedReason || '')}</div>
+        <div class="hint">
+          常见原因与对策：<br>
+          ① 没配代理或代理不稳 → 到「设置」点「自动探测」选一个本机代理；<br>
+          ② 该视频需要登录（会员/年龄限制）→ 设置里启用「从浏览器读取 cookies」；<br>
+          ③ 纯属 YouTube 临时抽风 → 点「重新解析」再试一次通常就好。
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn btn-sm btn-primary js-reprobe">↻ 重新解析</button>
+          <button class="btn btn-sm js-goto-settings">⚙ 去配置代理</button>
+        </div>
+      </div>` : ''}
+    <div class="row" style="margin:4px 0 16px">
+      <button class="btn btn-sm btn-primary js-best">⬇ 最佳画质（${hi}p 含音轨）</button>
+      <button class="btn btn-sm js-all">⬇ 下载全部分辨率</button>
+      <button class="btn btn-sm js-mp3">♪ 仅下载音频 MP3</button>
+    </div>
+    <label class="check js-thumb-opt" style="margin:-6px 0 14px">
+      <input type="checkbox" class="js-thumb">
+      同时下载视频封面（JPG 图片，与视频同目录）
+    </label>
+    <div class="card-t" style="font-size:13px">选择分辨率</div>
+    <div class="card-d" style="margin-bottom:12px">点击任意一档直接下载（自动挑选该档位最优编码 + 最佳音轨并合并）。展开可看全部编码版本。</div>
+    <div class="js-groups"></div>
+    ${r.audioOnly.length ? `
+      <details class="adv" style="margin-top:14px">
+        <summary>仅音频流（${r.audioOnly.length} 个）</summary>
+        <div style="margin-top:8px" class="js-audio-holder"></div>
+      </details>` : ''}
+  `;
+
+  // 封面选项：默认跟随全局设置；用户在这里勾选/取消只作用于本次视频
+  const thumbBox = card.querySelector('.js-thumb');
+  thumbBox.checked = !!CFG.writeThumbnail;
+  // 记住用户的手动改动，避免每次同步全局设置时把它冲掉
+  thumbBox._touched = false;
+  thumbBox.onchange = () => { thumbBox._touched = true; };
+  const wantThumb = () => thumbBox.checked;
+
+  const groupsBox = card.querySelector('.js-groups');
+  r.groups.forEach(g => groupsBox.appendChild(renderGroup(url, r, g, wantThumb)));
+
+  // 音频流列表也复用同一个封面开关
+  const audioHolder = card.querySelector('.js-audio-holder');
+  if (audioHolder) audioHolder.appendChild(renderAudio(url, r, wantThumb));
+
+  card.querySelector('.js-best').onclick = () => {
+    if (!r.groups.length) return toast('没有可用的视频流');
+    downloadOne(url, r, `HEIGHT:${r.groups[0].height}AUDIO`, r.groups[0].height + 'p', wantThumb());
+  };
+  card.querySelector('.js-mp3').onclick = () => downloadOne(url, r, 'AUDIO-MP3', 'MP3 音频', wantThumb());
+  card.querySelector('.js-all').onclick = (ev) => {
+    const heights = r.groups.filter(g => g.height > 0).map(g => g.height);
+    if (!heights.length) return toast('没有可用的视频流');
+    const wt = wantThumb();
+    if (!confirm(`将为 ${heights.length} 档分辨率（${heights.join('p / ')}p）各创建一个下载任务，\n总共会占用较多磁盘空间与流量，确定继续？${wt ? '\n\n（含封面图片）' : ''}`)) return;
+    heights.forEach(h => downloadOne(url, r, `HEIGHT:${h}AUDIO`, h + 'p', wt));
+    toast(`已创建 ${heights.length} 个任务`, 4000);
+  };
+
+  /*
+   * 降级提示条上的两个按钮。
+   * 「重新解析」会在服务端换一套客户端策略重跑（并覆盖这张卡片），
+   * 比让用户自己反复粘贴链接省事。
+   */
+  const reBtn = card.querySelector('.js-reprobe');
+  if (reBtn) reBtn.onclick = async () => {
+    reBtn.disabled = true;
+    reBtn.textContent = '↻ 重新解析中…';
+    try {
+      const nr = await api('/api/probe', {method:'POST', body: JSON.stringify({url})});
+      if (nr.error) { toast('重新解析失败：' + nr.error, 6000); return; }
+      const idx = RESULTS.findIndex(x => x.url === url);
+      if (idx >= 0) RESULTS[idx] = { url, data: nr }; else RESULTS.push({ url, data: nr });
+      card.replaceWith(renderResult(url, nr));
+      toast(nr.degraded
+        ? `仍只拿到 ${nr.bestHeight || 0}p，建议检查代理或启用浏览器 cookies`
+        : `已拿到完整格式列表（最高 ${nr.bestHeight}p）`, 4500);
+    } catch (e) {
+      toast('重新解析失败：' + e.message, 6000);
+    } finally {
+      if (reBtn.isConnected) { reBtn.disabled = false; reBtn.textContent = '↻ 重新解析'; }
+    }
+  };
+  const gotoSet = card.querySelector('.js-goto-settings');
+  if (gotoSet) gotoSet.onclick = () => {
+    $('#settings').classList.remove('hidden');
+    $('#settings').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  return card;
+}
+
+function bestVideoOf(g) {
+  const list = g.withAudio.length ? g.withAudio : g.videoOnly;
+  return list[0] || g.formats[0];
+}
+function bestAudioOf(r) {
+  return r.audioOnly[0] || null;
+}
+
+function estSize(g, r) {
+  const v = bestVideoOf(g);
+  const a = bestAudioOf(r);
+  let n = (v && v.filesize) || 0;
+  const needAudio = !g.withAudio.length;
+  if (needAudio && a && a.filesize) n += a.filesize;
+  if (!v || !v.filesize_exact) return { text: n ? '≈ ' + fmtBytes(n) : '大小未知', exact: false };
+  return { text: fmtBytes(n), exact: true };
+}
+
+function renderGroup(url, r, g, wantThumb) {
+  const wt = typeof wantThumb === 'function' ? wantThumb : () => false;
+  const box = el('div','qgroup');
+  const v = bestVideoOf(g);
+  const sz = estSize(g, r);
+  const tags = [];
+  if (g.height >= 2160) tags.push('<span class="tag">4K</span>');
+  else if (g.height >= 1440) tags.push('<span class="tag">2K</span>');
+  if (g.fpsMax >= 50) tags.push(`<span class="tag fps">${g.fpsMax}fps</span>`);
+  if (g.hdr) tags.push('<span class="tag hdr">HDR</span>');
+  if (g.withAudio.length) tags.push('<span class="tag audio">含音轨</span>');
+  else tags.push('<span class="tag" style="background:#1c2430;color:#7f8ea8">需合并音轨</span>');
+  tags.push(`<span class="tag" style="background:#1e2431;color:#8b97ad">${g.formats.length} 个编码</span>`);
+
+  const codecs = [...new Set(g.formats.map(f => codecName(f.vcodec)))].join(' / ');
+
+  const head = el('div','qhead');
+  head.innerHTML = `
+    <span class="qarrow">▶</span>
+    <span class="qres">${g.height ? g.height + 'p' : '未知'}<small>${g.height >= 2160 ? '3840×2160' : g.width ? g.width + '×' + g.height : ''}</small></span>
+    <span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${tags.join('')}</span>
+    <span class="qsize">${sz.text}<small>${codecs}</small></span>
+  `;
+  const btn = el('button','btn btn-sm btn-primary','下载');
+  btn.style.marginLeft = '10px';
+  btn.onclick = e => { e.stopPropagation(); downloadOne(url, r, `HEIGHT:${g.height}AUDIO`, g.height + 'p', wt()); };
+  head.appendChild(btn);
+
+  const body = el('div','qbody');
+  // 视频流
+  g.formats.forEach(f => {
+    const row = el('div','frow');
+    const isA = !!f.acodec;
+    row.innerHTML = `
+      <span class="fcodec">${codecName(f.vcodec)}</span>
+      <span class="fdim">${f.width||'?'}×${f.height||'?'}${f.fps?' @'+f.fps+'fps':''}</span>
+      <span class="tag ${isA?'audio':'novid'}">${isA?'含音轨':'仅画面'}</span>
+      <span class="tag" style="background:#1c2430;color:#7f8ea8">${esc(String(f.ext).toUpperCase())}</span>
+      <span class="fnum">${f.filesize ? fmtBytes(f.filesize) : '—'} &nbsp;·&nbsp; ${f.tbr ? Math.round(f.tbr)+' kbps' : '—'}</span>
+    `;
+    const b = el('button','btn btn-sm', isA ? '下载' : '仅视频');
+    b.onclick = () => downloadOne(url, r, f.format_id, (f.height?f.height+'p ':'') + codecName(f.vcodec) + (isA?'（含音轨）':'（无音轨，仅视频）'), wt());
+    row.appendChild(b);
+    body.appendChild(row);
+  });
+  // 若该档位没有含音轨的流，额外给出"视频+指定音轨"的快捷操作
+  if (!g.withAudio.length) {
+    const a = bestAudioOf(r);
+    const row = el('div','frow');
+    row.innerHTML = `<span class="fcodec" style="color:var(--blue)">组合下载</span>
+      <span class="fdim">视频 + 最佳音轨${a ? ' ('+codecName(a.acodec)+')' : ''}</span>
+      <span class="fnum" style="margin-left:auto">推荐</span>`;
+    const b = el('button','btn btn-sm btn-primary','下载');
+    b.onclick = () => downloadOne(url, r, `HEIGHT:${g.height}AUDIO`, g.height + 'p', wt());
+    row.appendChild(b);
+    body.appendChild(row);
+  }
+
+  head.onclick = () => box.classList.toggle('open');
+  box.appendChild(head);
+  box.appendChild(body);
+  return box;
+}
+
+function codecName(c) {
+  if (!c) return '—';
+  const s = String(c).toLowerCase();
+  if (s.startsWith('avc') || s.startsWith('h264')) return 'H.264';
+  if (s.startsWith('vp9') || s.startsWith('vp09')) return 'VP9';
+  if (s.startsWith('av01') || s.startsWith('av1')) return 'AV1';
+  if (s.startsWith('hev') || s.startsWith('h265')) return 'HEVC';
+  if (s.startsWith('vp8')) return 'VP8';
+  if (s.startsWith('opus')) return 'Opus';
+  if (s.startsWith('mp4a') || s.startsWith('aac')) return 'AAC';
+  if (s.startsWith('ec-3') || s.startsWith('ac-3')) return 'AC-3';
+  if (s.startsWith('vorbis')) return 'Vorbis';
+  return String(c).split('.')[0].toUpperCase();
+}
+
+function renderAudio(url, r, wantThumb) {
+  const box = el('div');
+  const wt = typeof wantThumb === 'function' ? wantThumb : () => false;
+  r.audioOnly.forEach(f => {
+    const row = el('div','frow');
+    row.innerHTML = `
+      <span class="fcodec">${codecName(f.acodec)}</span>
+      <span class="fdim">${f.abr ? Math.round(f.abr)+' kbps' : (f.tbr?Math.round(f.tbr)+' kbps':'—')}${f.audio_channels?' · '+f.audio_channels+'ch':''}</span>
+      <span class="tag" style="background:#1c2430;color:#7f8ea8">${esc(String(f.ext).toUpperCase())}</span>
+      <span class="fnum">${f.filesize ? fmtBytes(f.filesize) : '—'}</span>
+    `;
+    const b = el('button','btn btn-sm','下载');
+    b.onclick = () => downloadOne(url || r.webpage_url, r, f.format_id, codecName(f.acodec) + ' 音频', wt());
+    row.appendChild(b);
+    box.appendChild(row);
+  });
+  return box;
+}
+
+/* ============================ 下载 ============================ */
+async function downloadOne(url, r, selector, label, wantThumb) {
+  const r2 = await api('/api/download', {
+    method:'POST',
+    body: JSON.stringify({
+      url,
+      title: r.title,
+      uploader: r.uploader,
+      thumbnail: r.thumbnail,
+      qualityLabel: label,
+      kind: selector === 'AUDIO-MP3' ? 'audio' : 'video',
+      formatSelector: selector,
+      // 只在该视频卡片上明确选择过时才下发，否则交给后端跟随全局设置
+      wantThumbnail: typeof wantThumb === 'boolean' ? wantThumb : undefined
+    })
+  });
+  if (r2.ok) {
+    toast(wantThumb === true ? ('已加入下载队列：' + label + '（含封面）') : ('已加入下载队列：' + label));
+    if (r2.tasks && r2.tasks[0]) { TASKS.set(r2.tasks[0].id, r2.tasks[0]); if (!TASK_ORDER.includes(r2.tasks[0].id)) TASK_ORDER.push(r2.tasks[0].id); renderTasks(); }
+  } else toast('创建任务失败');
+}
+
+/* ============================ SSE ============================ */
+function connectSSE() {
+  const es = new EventSource('/api/events');
+  es.onmessage = e => {
+    let m;
+    try { m = JSON.parse(e.data); } catch (err) { return; }
+    if (m.type === 'task-add') {
+      if (!TASKS.has(m.payload.id)) TASK_ORDER.push(m.payload.id);
+      TASKS.set(m.payload.id, m.payload);
+      renderTasks();
+    } else if (m.type === 'task-update' || m.type === 'task-done') {
+      const old = TASKS.get(m.payload.id);
+      if (!old || m.payload.finishedAt >= (old.finishedAt||0)) TASKS.set(m.payload.id, m.payload);
+      renderTasks();
+    } else if (m.type === 'task-remove') {
+      TASKS.delete(m.payload.id);
+      const i = TASK_ORDER.indexOf(m.payload.id);
+      if (i >= 0) TASK_ORDER.splice(i,1);
+      renderTasks();
+    }
+  };
+  es.onerror = () => { /* EventSource 会自动重连 */ };
+}
+
+/* ============================ 渲染任务 ============================ */
+const ST_MAP = {
+  queued: ['st-queued','排队中'], running: ['st-running','下载中'],
+  done: ['st-done','已完成'], error: ['st-error','失败'], canceled: ['st-canceled','已取消']
+};
+
+function renderTasks() {
+  const box = $('#tasks');
+  const ids = TASK_ORDER.filter(id => TASKS.has(id));
+  if (!ids.length) {
+    box.innerHTML = '<div class="empty">还没有下载任务。解析链接后点「下载」即可开始。</div>';
+    $('#task-sum').textContent = '暂无任务';
+    return;
+  }
+  const run = ids.filter(i => TASKS.get(i).status === 'running').length;
+  const que = ids.filter(i => TASKS.get(i).status === 'queued').length;
+  const dn = ids.filter(i => TASKS.get(i).status === 'done').length;
+  $('#task-sum').textContent = `${ids.length} 个任务 · 下载中 ${run} · 排队 ${que} · 完成 ${dn}`;
+
+  // 增量更新 DOM，避免进度条跳动
+  const seen = new Set();
+  ids.forEach(id => {
+    const t = TASKS.get(id);
+    seen.add(id);
+    let node = box.querySelector(`[data-id="${id}"]`);
+    if (!node) {
+      node = el('div','task');
+      node.dataset.id = id;
+      box.appendChild(node);
+    }
+    node.className = 'task ' + (t.status === 'running' ? 'running' : t.status === 'error' ? 'error' : t.status);
+    // 风控等待重试时给个专门的徽章，否则"排队中"会让人以为是卡住了
+    const st = (t.status === 'queued' && t.botRetries)
+      ? ['st-queued', '风控重试中']
+      : (t.status === 'queued' && t.forbiddenRetries)
+        ? ['st-queued', '403 重试中']
+        : (ST_MAP[t.status] || ['st-queued', t.status]);
+    const pct = Math.max(0, Math.min(100, t.percent || 0));
+    const showBar = t.status === 'running' || t.status === 'queued' || t.status === 'done';
+
+    node.innerHTML = `
+      <div class="task-t">
+        <span class="task-name">${esc(t.title || t.url)}</span>
+        ${t.qualityLabel ? `<span class="tag">${esc(t.qualityLabel)}</span>` : ''}
+        <span class="task-badge ${st[0]}">${st[1]}</span>
+      </div>
+      ${showBar ? `
+        <div class="bar"><i style="width:${t.status==='done'?100:pct}%"></i></div>
+        <div class="stats">
+          <span><b>${t.status==='done'?'100':pct.toFixed(1)}%</b></span>
+          <span>${t.total ? fmtBytes(t.downloaded) + ' / ' + fmtBytes(t.total) : (t.downloaded ? fmtBytes(t.downloaded) : '')}</span>
+          <span>速度 <b>${fmtSpeed(t.speed)}</b></span>
+          <span>剩余 <b>${fmtEta(t.eta)}</b></span>
+          <span>${esc(t.stage || '')}</span>
+        </div>` : `<div class="stats"><span>${esc(t.stage||'')}</span></div>`}
+      ${t.errorHint ? `
+        <div class="warn-box" style="margin-top:9px">
+          <div class="warn-t">⚠ 可能的原因与解决办法</div>
+          <div class="warn-d" style="white-space:pre-wrap">${esc(t.errorHint)}</div>
+        </div>` : ''}
+      ${t.error ? `
+        <details class="adv" style="margin-top:8px">
+          <summary>原始报错（排查用）</summary>
+          <div class="err-box" style="margin-top:8px">${esc(t.error)}</div>
+        </details>` : ''}
+      <div class="task-acts"></div>
+    `;
+    const acts = node.querySelector('.task-acts');
+    if (t.status === 'running' || t.status === 'queued') {
+      const b = el('button','btn btn-sm','取消');
+      b.onclick = async () => { await api('/api/cancel', {method:'POST', body: JSON.stringify({id})}); };
+      acts.appendChild(b);
+    } else {
+      if (t.status === 'done') {
+        const b = el('button','btn btn-sm btn-primary','打开所在文件夹');
+        b.onclick = () => openFolder({id});
+        acts.appendChild(b);
+
+        // 若本次下载带了封面，额外给出打开封面 / 定位封面 的入口
+        if (t.thumbnailPath) {
+          const bt = el('button','btn btn-sm','打开封面');
+          bt.title = t.thumbnailPath;
+          bt.onclick = async () => {
+            const r = await api('/api/open-file', {method:'POST', body: JSON.stringify({id, which:'thumb'})});
+            if (!r.ok) toast('打不开封面：' + (r.error || '未知原因'));
+            else toast('已用默认看图程序打开封面');
+          };
+          acts.appendChild(bt);
+
+          const bl = el('button','btn btn-sm btn-ghost','定位封面');
+          bl.title = t.thumbnailPath;
+          bl.onclick = () => openFolder({id, which:'thumb'});
+          acts.appendChild(bl);
+        }
+      }
+      if (t.status === 'error' || t.status === 'canceled') {
+        const b = el('button','btn btn-sm','重试');
+        b.onclick = async () => { const r = await api('/api/retry',{method:'POST',body:JSON.stringify({id})}); if (r.id) { TASKS.set(r.id,r); TASK_ORDER.push(r.id); renderTasks(); } };
+        acts.appendChild(b);
+      }
+      const b2 = el('button','btn btn-sm btn-ghost','移除记录');
+      b2.onclick = async () => { await api('/api/remove', {method:'POST', body: JSON.stringify({id})}); };
+      acts.appendChild(b2);
+    }
+  });
+  // 清理已移除的节点
+  [...box.children].forEach(n => { if (n.dataset && n.dataset.id && !seen.has(n.dataset.id)) n.remove(); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "downloadDir": "downloads",
+  "proxy": "",
+  "preferHighQuality": false,
+  "mergeContainer": "mp4",
+  "embedMetadata": true,
+  "writeThumbnail": false,
+  "embedThumbnail": false,
+  "writeSubtitles": false,
+  "subtitleLangs": "zh-Hans,zh-CN,zh,en",
+  "cookiesFromBrowser": "",
+  "concurrency": 2,
+  "filenameTemplate": "%(title).120B [%(id)s].%(ext)s",
+  "allowPlaylist": false,
+  "rateLimit": "",
+  "potProviderUrl": "http://127.0.0.1:4416",
+  "userAgent": "",
+  "playerClient": ""
+}
